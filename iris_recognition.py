@@ -4,29 +4,34 @@ import os
 import sys
 import math
 import random
-import cPickle as pickle
+import pickle as pickle
 import copy
 import gzip
 import inspect
 import itertools
+# from pil import Image
+import matplotlib
+# import PIL as image
 
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 
 def compare_images(filepath1, filepath2):
-    print "Analysing " + filepath1
+    print ("Analysing " + filepath1)
     rois_1 = load_rois_from_image(filepath1)
 
-    print "Analysing " + filepath2
+    print ("Analysing " + filepath2)
     rois_2 = load_rois_from_image(filepath2)
     
     getall_matches(rois_1, rois_2, 0.8, 10, 0.15, show=True)
 
 def compare_binfiles(bin_path1, bin_path2):
-    print "Analysing " + bin_path1
+    print ("Analysing " + bin_path1)
     rois_1 = load_rois_from_bin(bin_path1)
     
-    print "Analysing " + bin_path2
+    print ("Analysing " + bin_path2)
     rois_2 = load_rois_from_bin(bin_path2)
 
     getall_matches(rois_1, rois_2, 0.88, 10, 0.07, show=True)
@@ -34,19 +39,19 @@ def compare_binfiles(bin_path1, bin_path2):
 def load_rois_from_image(filepath):
     img = load_image(filepath, show=True)
 
-    print "Getting iris boundaries.."
+    print ("Getting iris boundaries..")
     pupil_circle, ext_iris_circle = get_iris_boundaries(img, show=True)
     if not pupil_circle or not ext_iris_circle:
-        print "Error finding iris boundaries!"
+        print ("Error finding iris boundaries!")
         return
 
-    print "Equalizing histogram .."
+    print ("Equalizing histogram ..")
     roi = get_equalized_iris(img, ext_iris_circle, pupil_circle, show=True)
 
-    print "Getting roi iris images ..."
+    print ("Getting roi iris images ...")
     rois = get_rois(roi, pupil_circle, ext_iris_circle, show=True)
 
-    print "Searching for keypoints ... \n"
+    print ("Searching for keypoints ... \n")
     sift = cv2.xfeatures2d.SIFT_create()
     load_keypoints(sift, rois, show=True)
     load_descriptors(sift, rois)  
@@ -66,7 +71,7 @@ def get_iris_boundaries(img, show=False):
     pupil_circle = find_pupil(img)
 
     if not pupil_circle:
-        print 'ERROR: Pupil circle not found!'
+        print ('ERROR: Pupil circle not found!')
         return None, None
 
     # Finding iris outer boundary
@@ -78,13 +83,13 @@ def get_iris_boundaries(img, show=False):
 
     while(not ext_iris_circle and multiplier <= 0.7):
         multiplier += 0.05
-        print 'Searching exterior iris circle with multiplier ' + \
-              str(multiplier)
+        print ('Searching exterior iris circle with multiplier ' + \
+              str(multiplier))
         center_range = int(math.ceil(pupil_circle[2]*multiplier))
         ext_iris_circle = find_ext_iris(img, pupil_circle,
                                         center_range, radius_range)
     if not ext_iris_circle:
-        print 'ERROR: Exterior iris circle not found!'
+        print ('ERROR: Exterior iris circle not found!')
         return None, None
     
     if show:
@@ -212,7 +217,7 @@ def find_ext_iris(img, pupil_circle, center_range, radius_range):
         param2 = param2 -1
 
     if not total_circles:
-        print "Running plan B on finding ext iris circle"
+        print ("Running plan B on finding ext iris circle")
         param2 = 120
         while(param2 > 40 and len(total_circles) < 50):
             crt_circles = get_circles(
@@ -249,7 +254,7 @@ def filtered_circles(circles, draw=None):
         return alpha_circle[2]
 
     if not circles:
-        print 'Error: empty circles list in filtered_circles() !'
+        print ('Error: empty circles list in filtered_circles() !')
         return []
     c_0_mean, c_0_dev = standard_dev([int(i[0]) for i in circles])
     c_1_mean, c_1_dev = standard_dev([int(i[1]) for i in circles])
@@ -527,15 +532,15 @@ def getall_matches(rois_1, rois_2, dratio,
 
     for pos in ['right-side','left-side','bottom','complete']:
         if not rois_1[pos]['kp'] or not rois_2[pos]['kp']:
-            print "KeyPoints not found in one of rois_x[pos]['kp'] !!!"
-            print " -->", pos, len(rois_1[pos]['kp']), len(rois_2[pos]['kp'])
+            print ("KeyPoints not found in one of rois_x[pos]['kp'] !!!")
+            print (" -->", pos, len(rois_1[pos]['kp']), len(rois_2[pos]['kp']))
         else:
             matches = get_matches(rois_1[pos], rois_2[pos],
                                    dratio, stdev_angle, stdev_dist)        
             numberof_matches[pos] = len(matches)
             
         if show:
-            print "{0} matches: {1}".format(pos, str(len(matches)))
+            print ("{0} matches: {1}".format(pos, str(len(matches))))
             crt_image = cv2.drawMatchesKnn(
                             rois_1[pos]['img'],rois_1[pos]['kp'],
                             rois_2[pos]['img'],rois_2[pos]['kp'],
@@ -551,7 +556,7 @@ def getall_matches(rois_1, rois_2, dratio,
 def get_matches(roipos_1, roipos_2,
                 dratio, stdev_angle, stdev_dist):    
     if not roipos_1['kp'] or not roipos_2['kp']:
-        print "KeyPoints not found in one of roipos_x['kp'] !!!"
+        print ("KeyPoints not found in one of roipos_x['kp'] !!!")
         return []
 
     bf = cv2.BFMatcher()
@@ -664,8 +669,8 @@ def median(x):
 
 def standard_dev(x):
     if not x:
-        print 'Error: empty list parameter in standard_dev() !'
-        print inspect.getouterframes( inspect.currentframe() )[1]
+        print ('Error: empty list parameter in standard_dev() !')
+        print (inspect.getouterframes( inspect.currentframe() )[1])
         print
         return None, None
     m = mean(x)
